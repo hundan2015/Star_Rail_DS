@@ -1,0 +1,3 @@
+[submodule "thirdparty/star_rail_core"]
+	path = thirdparty/star_rail_core
+	url = https://github.com/hundan2015/Starrail_Clone_Core.git
