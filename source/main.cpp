@@ -60,7 +60,10 @@ void singleAction(int action, int target) {
         cout << "Bad action!" << endl;
         return;
     }
-    battleCore.tick(nextActionCharacterId, action, {target});
+    battleCore.tick(nextActionCharacterId, action,
+                    battleCore.characters[nextActionCharacterId]
+                        ->skills[action]
+                        ->getTargets(battleCore.characterBattleStates, target));
     auto& hitInfos = battleCore.getHitInfoInTick();
     for (auto& i : hitInfos) {
         auto& targetCharacter = battleCore.characters[i.target];
