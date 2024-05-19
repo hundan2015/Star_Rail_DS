@@ -3,16 +3,21 @@
 // SPDX-FileContributor: Antonio Niño Díaz, 2008-2024
 //
 // This file is part of Nitro Engine
-// #define LANG_ENGLISH
-#include "iostream"
+#include <cstdint>
+
+#include "nds/arm9/input.h"
+#define LANG_ENGLISH
+#include <iostream>
+
 #include "BattleCore.h"
+#include "Characters/Herta.h"
+#include "Characters/Monsters/SilvermaneSoldier.h"
+#include "Characters/TrailBlazerPhysic.h"
+#include "Constants.h"
 
 extern "C" {
-#include "Constants.h"
-#include "Characters/Herta.h"
-#include "Characters/TrailBlazerPhysic.h"
-#include "Characters/Monsters/SilvermaneSoldier.h"
 #include <NEMain.h>
+
 #include "NEGeneral.h"
 }
 
@@ -45,7 +50,16 @@ void singleAction(int action, int target) {
     string name = characterStrings[battleCore.characters[nextActionCharacterId]
                                        ->characterGlobalId];
     cout << "Current action character id:" << nextActionCharacterId << endl;
-    cout << "Name:" << name;
+    cout << "Name:" << name << endl;
+    if (battleCore.characterBattleStates[target] == nullptr) {
+        cout << "Bad target!" << endl;
+        return;
+    }
+    if (battleCore.characters[nextActionCharacterId]->skills[action] ==
+        nullptr) {
+        cout << "Bad action!" << endl;
+        return;
+    }
     battleCore.tick(nextActionCharacterId, action, {target});
     auto& hitInfos = battleCore.getHitInfoInTick();
     for (auto& i : hitInfos) {
@@ -115,6 +129,22 @@ void registerPlayerToBattleCore(BattleCore& battleCore, Character* character,
     battleCore.characterBattleStates[pos]->characterLocalId = pos;
 }
 
+int getKeyNum(uint32_t key) {
+    if (key & KEY_UP) return 0;
+    if (key & KEY_DOWN) return 1;
+    if (key & KEY_LEFT) return 2;
+    if (key & KEY_RIGHT) return 3;
+    if (key & KEY_A) return 4;
+    if (key & KEY_B) return 5;
+    if (key & KEY_X) return 6;
+    if (key & KEY_Y) return 7;
+    if (key & KEY_L) return 8;
+    if (key & KEY_R) return 9;
+    if (key & KEY_START) return 10;
+    if (key & KEY_SELECT) return 11;
+    return -1;
+}
+
 int main(int argc, char* argv[]) {
     SceneData1 Scene1 = {0};
     SceneData2 Scene2 = {0};
@@ -142,6 +172,7 @@ int main(int argc, char* argv[]) {
     battleCore.initActionPoint();
     int action = 0;
     int target;
+    int state = 0;
 
     while (1) {
         NE_WaitForVBL(NE_UPDATE_GUI);
@@ -149,6 +180,52 @@ int main(int argc, char* argv[]) {
 
         scanKeys();
 
+        auto keys = keysHeld();
+        int keyNum = getKeyNum(keys);
+        if (state == 0) {
+            static bool isFirst = true;
+            if (isFirst) {
+                cout << "input action:";
+                isFirst = false;
+            }
+            if (keyNum != -1) {
+                action = keyNum;
+                cout << action << endl;
+                isFirst = true;
+                state = 1;
+            }
+        } else if (state == 1) {
+            static int counter = 0;
+            counter++;
+            if (counter >= 60) {
+                counter = 0;
+                state = 2;
+            }
+        } else if (state == 2) {
+            static bool isFirst = true;
+            if (isFirst) {
+                cout << "input target:";
+                isFirst = false;
+            }
+            if (keyNum != -1) {
+                target = keyNum;
+                cout << target << endl;
+                isFirst = true;
+                singleAction(action, target);
+                static auto& battleCore = BattleCore::getInstance();
+                if (battleCore.getGameState() != GOING) {
+                    return 0;
+                }
+                state = 3;
+            }
+        } else if (state == 3) {
+            static int counter = 0;
+            counter++;
+            if (counter >= 60) {
+                counter = 0;
+                state = 0;
+            }
+        }
         // Your code goes here
     }
 
