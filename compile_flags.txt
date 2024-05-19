@@ -7,6 +7,12 @@ ARM9
 -I
 ./thirdparty/star_rail_core/include
 -I
+/opt/wonderful/toolchain/gcc-arm-none-eabi/arm-none-eabi/include/c++/13.2.0
+-I
+/opt/wonderful/toolchain/gcc-arm-none-eabi/arm-none-eabi/include/c++/13.2.0/arm-none-eabi
+-I
+/opt/wonderful/toolchain/gcc-arm-none-eabi/arm-none-eabi/include
+-I
 /opt/wonderful/thirdparty/blocksds/external/nitro-engine/include/
 -I
 /opt/wonderful/thirdparty/blocksds/core/libs/libnds/include/
@@ -16,3 +22,7 @@ ARM9
 /opt/wonderful/thirdparty/blocksds/core/libs/libxm7/include/
 -I
 /opt/wonderful/thirdparty/blocksds/core/libs/maxmod/include/
+-xc++
+-xc++-header
+-target
+arm
