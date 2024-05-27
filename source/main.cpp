@@ -4,9 +4,6 @@
 //
 // This file is part of Nitro Engine
 #include <cstdint>
-
-#include "nds/arm9/input.h"
-#define LANG_ENGLISH
 #include <iostream>
 
 #include "BattleCore.h"
@@ -14,6 +11,7 @@
 #include "Characters/Monsters/SilvermaneSoldier.h"
 #include "Characters/TrailBlazerPhysic.h"
 #include "Constants.h"
+#include "nds/arm9/input.h"
 
 extern "C" {
 #include <NEMain.h>
@@ -22,8 +20,9 @@ extern "C" {
 }
 
 using std::cout;
+using std::endl;
 using std::string;
-string endl = "\n";
+
 typedef struct {
     int placeholder;
 } SceneData1;
@@ -42,82 +41,6 @@ void Draw3DScene2(void* arg) {
     SceneData2* Scene = (SceneData2*)arg;
 
     (void)Scene;  // Silence unused variable warning
-}
-
-void singleAction(int action, int target) {
-    BattleCore& battleCore = BattleCore::getInstance();
-    int nextActionCharacterId = battleCore.getNextAction();
-    string name = characterStrings[battleCore.characters[nextActionCharacterId]
-                                       ->characterGlobalId];
-    cout << "Current action character id:" << nextActionCharacterId << endl;
-    cout << "Name:" << name << endl;
-    if (battleCore.characterBattleStates[target] == nullptr) {
-        cout << "Bad target!" << endl;
-        return;
-    }
-    if (battleCore.characters[nextActionCharacterId]->skills[action] ==
-        nullptr) {
-        cout << "Bad action!" << endl;
-        return;
-    }
-    battleCore.tick(nextActionCharacterId, action,
-                    battleCore.characters[nextActionCharacterId]
-                        ->skills[action]
-                        ->getTargets(battleCore.characterBattleStates, target));
-    auto& hitInfos = battleCore.getHitInfoInTick();
-    for (auto& i : hitInfos) {
-        auto& targetCharacter = battleCore.characters[i.target];
-        auto& targetCharacterState = battleCore.characterBattleStates[i.target];
-        string criticalString = i.isCritical ? ",critical!" : "";
-        cout << name << " hit "
-             << characterStrings[targetCharacter->characterGlobalId]
-             << criticalString << endl;
-        cout << characterStrings[targetCharacter->characterGlobalId]
-             << " HP:" << targetCharacterState->characterProperty->hp << endl;
-    }
-    if (battleCore.getGameState() != GOING) return;
-    battleCore.resetHitInfoInTick();
-
-    if (battleCore.battleCoreState == BEFORE_APPEND) {
-        auto appendATKInfo = battleCore.appendATKs.front();
-        auto tempName = characterStrings[appendATKInfo.attacker];
-        battleCore.tick(0, 0, {});
-        auto& appendHitInfos = battleCore.getHitInfoInTick();
-        for (auto& i : appendHitInfos) {
-            auto& targetCharacter = battleCore.characters[i.target];
-            auto& targetCharacterState =
-                battleCore.characterBattleStates[i.target];
-            string criticalString = i.isCritical ? ",critical!" : "";
-            cout << tempName << " have a append hit on "
-                 << characterStrings[targetCharacter->characterGlobalId]
-                 << criticalString << endl;
-            cout << characterStrings[targetCharacter->characterGlobalId]
-                 << " HP:" << targetCharacterState->characterProperty->hp
-                 << endl;
-        }
-        if (battleCore.getGameState() != GOING) return;
-        battleCore.resetHitInfoInTick();
-    }
-    if (battleCore.battleCoreState == BEFORE_ROUND) {
-        battleCore.tick(0, 0, {});
-        auto& appendHitInfos = battleCore.getHitInfoInTick();
-        for (auto& i : appendHitInfos) {
-            auto& attacker = battleCore.characters[i.attacker];
-            auto tempName = characterStrings[attacker->characterGlobalId];
-            auto& targetCharacter = battleCore.characters[i.target];
-            auto& targetCharacterState =
-                battleCore.characterBattleStates[i.target];
-            string criticalString = i.isCritical ? ",critical!" : "";
-            cout << tempName << " have a before round hit on "
-                 << characterStrings[targetCharacter->characterGlobalId]
-                 << criticalString << endl;
-            cout << characterStrings[targetCharacter->characterGlobalId]
-                 << " HP:" << targetCharacterState->characterProperty->hp
-                 << endl;
-        }
-        if (battleCore.getGameState() != GOING) return;
-        battleCore.resetHitInfoInTick();
-    }
 }
 
 void registerPlayerToBattleCore(BattleCore& battleCore, Character* character,
@@ -166,11 +89,15 @@ int main(int argc, char* argv[]) {
     auto p1 = std::make_unique<Character>(TrailBlazerPhysic());
     auto p2 = std::make_unique<Character>(SilvermaneSolder());
     auto p3 = std::make_unique<Character>(Herta());
+    auto p5 = std::make_unique<Character>(SilvermaneSolder());
+    auto p4 = std::make_unique<Character>(SilvermaneSolder());
     p3->eidolonLevel = 6;
     // p2->basicCharacterProperty->hp = 2000;
     registerPlayerToBattleCore(battleCore, p1.get(), 0);
     registerPlayerToBattleCore(battleCore, p3.get(), 1);
     registerPlayerToBattleCore(battleCore, p2.get(), 4);
+    registerPlayerToBattleCore(battleCore, p4.get(), 5);
+    registerPlayerToBattleCore(battleCore, p5.get(), 6);
 
     battleCore.initActionPoint();
     int action = 0;
@@ -214,7 +141,7 @@ int main(int argc, char* argv[]) {
                 target = keyNum;
                 cout << target << endl;
                 isFirst = true;
-                singleAction(action, target);
+                battleCore.singleAction(action, target);
                 static auto& battleCore = BattleCore::getInstance();
                 if (battleCore.getGameState() != GOING) {
                     return 0;

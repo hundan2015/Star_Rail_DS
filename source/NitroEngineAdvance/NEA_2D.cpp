@@ -48,3 +48,9 @@ void Sprite3D::draw() {
 void Sprite3D::setMaterial(std::unique_ptr<NE_Material>& mat) {
     material = std::move(mat);
 }
+
+Sprite3D::Sprite3D() {
+    scale.x = 1;
+    scale.y = 1;
+    scale.z = 1;
+}
